@@ -67,9 +67,6 @@ namespace Miner49er
                 new ConditionDelegate[] { new ConditionDelegate(this.parched) },
                 new ActionDelegate[] { }, drinkingState);
 
-
-            
-            
             bankingState.addTransition("tick",
                 new ConditionDelegate[] { },
                 new ActionDelegate[] { }, miningState);
@@ -191,7 +188,7 @@ namespace Miner49er
 
         private Boolean pocketsNotEmpty(FSA fsa) => gold > 0;
 
-        private Boolean thirsty(FSA fsa) => thirst > 0;
+        private Boolean thirsty(FSA fsa) => thirst > 6;
 
         private Boolean gambleWealth(FSA fSA) => gold >= 5 && bank >= 10;
 
