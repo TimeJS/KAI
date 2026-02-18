@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 using KAI.FSA; // Use the namespace from your FSAImpl definition
 
 namespace Miner49er
@@ -19,6 +20,7 @@ namespace Miner49er
         State miningState;
         State drinkingState;
         State bankingState;
+        State gamblingState;
 
         // FIXED: Added : base("SimpleMiner") to resolve the FSAImpl constructor error
         public SimpleMiner() : base("SimpleMiner")
@@ -27,6 +29,7 @@ namespace Miner49er
             miningState = MakeNewState("Mining");
             drinkingState = MakeNewState("Drinking");
             bankingState = MakeNewState("Banking");
+            gamblingState = MakeNewState("Gambling");
 
             // set mining transitions
             miningState.addTransition("tick",
@@ -51,6 +54,11 @@ namespace Miner49er
                 new ActionDelegate[] { new ActionDelegate(this.incrementThirst) }, miningState);
 
             // set banking transitions
+
+            bankingState.addTransition("tick",
+                new ConditionDelegate[] { new ConditionDelegate(this.gambleWealth) },
+                new ActionDelegate[] {  }, gamblingState);
+
             bankingState.addTransition("tick",
                 new ConditionDelegate[] { new ConditionDelegate(this.pocketsNotEmpty) },
                 new ActionDelegate[] { new ActionDelegate(this.depositGold) }, bankingState);
@@ -58,10 +66,26 @@ namespace Miner49er
             bankingState.addTransition("tick",
                 new ConditionDelegate[] { new ConditionDelegate(this.parched) },
                 new ActionDelegate[] { }, drinkingState);
+
+
+            
             
             bankingState.addTransition("tick",
                 new ConditionDelegate[] { },
                 new ActionDelegate[] { }, miningState);
+
+
+            // set gambling transitions 
+
+            gamblingState.addTransition("tick",
+                new ConditionDelegate[] {this.gambleMoneyCheck},
+                new ActionDelegate[] { new ActionDelegate(this.gambleMoney) }, gamblingState);
+
+            gamblingState.addTransition("tick",
+               new ConditionDelegate[] { },
+               new ActionDelegate[] { }, miningState);
+
+
 
             // FIXED: Using PascalCase to match your FSAImpl.SetCurrentState method
             SetCurrentState(miningState);
@@ -98,6 +122,49 @@ namespace Miner49er
             Console.WriteLine("deposit a gold nugget");
         }
 
+
+        private void gambleMoney(FSA fsa)
+        {
+
+            Random gambleRandom = new Random(Environment.TickCount);
+            int gambleNumber = (int)(gambleRandom.NextSingle() * 100);
+
+            gold -= 1;
+            Console.WriteLine("The Slot's Number is: " +gambleNumber);
+
+
+
+            switch (gambleNumber)
+            {
+                case 1:
+                    Console.WriteLine("J-J-J-J-Jackpot!!!!!!!!!!");
+                    gold += 10000000;
+                    break;
+
+
+                    //minor win if in this range
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9: 
+                case 10:
+                    Console.WriteLine("Minor Win!");
+                    gold += 3;
+                    break;
+
+                default:
+
+                    Console.WriteLine("You Lose! Try Again!");
+                    break; 
+
+            }
+        }
+
+
         /// <summary>
         /// This implements the Miner.getCurrentWealth() call ...
         /// </summary>
@@ -120,11 +187,15 @@ namespace Miner49er
             thirst++;
         }
 
-        private Boolean pocketsFull(FSA fsa) => gold >= 5;
+        private Boolean pocketsFull(FSA fsa) => gold >= 10;
 
         private Boolean pocketsNotEmpty(FSA fsa) => gold > 0;
 
         private Boolean thirsty(FSA fsa) => thirst > 0;
+
+        private Boolean gambleWealth(FSA fSA) => gold >= 5 && bank >= 10;
+
+        private Boolean gambleMoneyCheck(FSA fSA) => gold > 0;
 
         public void printStatus()
         {
